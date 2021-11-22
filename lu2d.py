@@ -1,3 +1,4 @@
+"""Analysis tools for 2D spectroscopy at Chemical Physics, Lund University"""
 # stdlib imports
 import configparser
 import os.path
