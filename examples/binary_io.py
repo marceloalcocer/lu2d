@@ -46,7 +46,7 @@ def dataset_from_binary():
 	# All metadata
 	scans_per_point = dataset.metadata["Header"]["ScansPerPoint"]
 	experiment_2_path = dataset.metadata["Experiment 2"]["File2DSignal"]
-	
+
 	return dataset
 
 if __name__ == "__main__":

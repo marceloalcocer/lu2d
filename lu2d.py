@@ -11,22 +11,22 @@ class Dataset:
 
 	signal = None
 	"""Dataset signal array
-	
+
 	:type: ``numpy.ndarray``
 
 	An ``ndarray`` holding the dataset signal (dependent variable)
-	
+
 	"""
 
 	axes = None
 	"""Dataset axes array
-	
+
 	:type: sequence of ``numpy.ndarray``s
 
 	Each ``ndarray`` holds the dataset axis (independent variable) for the
 	corresponding signal array dimension. As such, ``len(axis) == signal.ndim``
 	and ``len(axis[i]) == signal.shape[i]``.
-	
+
 	"""
 
 	los = None
@@ -37,16 +37,16 @@ class Dataset:
 	Each ``ndarray`` holds the local oscillator intensity  (dependent variable)
 	for the measurement at the corresponding population time — i.e. ``lo[i]`` is
 	associsated with ``dataset.axes[1][i]``. As such, ``len(los) ==
-	len(dataset.axes[1]) == signal.shape[1]``. 
-	
+	len(dataset.axes[1]) == signal.shape[1]``.
+
 	The independent variable is the detection wavelenth, ``dataset.axis[2]``. As
 	such, ``len(los[i]) == len(dataset.axis[2])``
-	
+
 	"""
 
 	metadata = None
 	"""Metadata
-	
+
 	:type: mapping
 
 	**Valid for ``Datasets`` instantiated from binary files only**
@@ -72,14 +72,14 @@ class Dataset:
 	def from_text(cls, fmtstrs, t2):
 		"""Instantiate dataset from plain-text files
 
-		:param fmtstrs: Format strings for the real and imaginary filepaths 
+		:param fmtstrs: Format strings for the real and imaginary filepaths
 		:type fmtstrs:  dict
 		:param t2: Population time array
 		:type t2: sequence of ints
 
 		Instantiate dataset from multiple plain-text encoded files, as output by
 		2D analysis software.
-		
+
 		``fmtstrs`` is dict with 'real' and 'imag' keys containing format
 		strings for the real and imaginary filepaths. Each format string should
 		contain a 't2' key designating the population time.
@@ -131,16 +131,16 @@ class Dataset:
 	def to_text(self, fmtstrs):
 		"""Write dataset to plain-text files
 
-		:param fmtstrs: Format strings for the real and imaginary filepaths 
+		:param fmtstrs: Format strings for the real and imaginary filepaths
 		:type fmtstrs:  dict
 
 		Write data to multiple plain-text encoded files, as output by 2D
 		analysis software.
-		
+
 		``fmtstrs`` is dict with 'real' and 'imag' keys containing format
 		strings for the real and imaginary filepaths. Each format string should
 		contain a 't2' key designating the population time.
-		
+
 		e.g.::
 
 			>>> fmtstrs = {
@@ -184,15 +184,15 @@ class Dataset:
 
 		:param path: Path to metadata file
 		:type path: str
-		
+
 		Instantiate dataset from binary encoded files, as output by 2D
 		acquisition software.
-		
+
 		``path`` is the path to the experimental metadata file — the primary
 		plain-text file output by the 2D acquisition software. This contains all
 		experimental metadata, including the locations of the binary data files
 		(``*.bin``).
-		
+
 		e.g.::
 
 			>>> path = "GSBRC_2D_1kHz_4nJ_(0,0,0,0)_01.ini"
@@ -236,12 +236,12 @@ class Dataset:
 		"""Local oscillator arrays
 
 		:rtype: sequence of ``str`s
-		
+
 		Each element is the (plain-text) timestamp of the measurement at the
 		corresponding population time — i.e. ``timestamp[i]`` is associsated
 		with ``dataset.axes[1][i]``. As such, ``len(timestamps) ==
-		len(dataset.axes[1]) == signal.shape[1]``. 
-		
+		len(dataset.axes[1]) == signal.shape[1]``.
+
 		"""
 		return [
 			experiment.getstr("DateAndTime")
@@ -251,9 +251,9 @@ class Dataset:
 	@property
 	def excitation_energy(self):
 		"""Excitation energy
-		
+
 		:rtype: float
-		
+
 		"""
 		return (
 			self.metadata.header.getfloat("ExcitationEnergy")
@@ -264,9 +264,9 @@ class Dataset:
 	@property
 	def repetition_rate(self):
 		"""Excitation repetition rate
-		
+
 		:rtype: float
-		
+
 		"""
 		return (
 			self.metadata.header.getfloat("RepetitionRate")
@@ -277,13 +277,13 @@ class Dataset:
 	@property
 	def polarizations(self):
 		"""Pulse polarizations
-		
+
 		:rtype: sequence of ``float``s
 
 		A sequence whose elements correspond to the incident pulse polarizations
 		— i.e. ``polarizations[0]`` is the polarization of the  first pulse. As
 		such, ``len(polarizations) == 4``
-		
+
 		"""
 		return (
 			(
@@ -299,11 +299,11 @@ class Dataset:
 	@property
 	def fs_thickness(self):
 		"""Fused silica thickness
-		
+
 		:rtype: float
 
 		Thickness of fused silica between pulses 3 and 4
-		
+
 		"""
 		return (
 			self.metadata.header.getfloat("FSThicknessBetween3and4")
@@ -359,11 +359,11 @@ class _BinaryData:
 
 	def _validate(self):
 		"""Validate file
-		
+
 		Validations:
 
 		* Magic number
-		
+
 		"""
 		magic_number = self.file.read(len(self.magic_number))
 		if magic_number != self.magic_number:
@@ -380,7 +380,7 @@ class _BinaryData:
 				count=2							# Shapes always length 2
 			)[:]
 		)
-		
+
 	def _read_data(self, shape):
 		return np.fromfile(
 			self.file,
@@ -394,4 +394,3 @@ class _BinaryData:
 			shape = self._read_shape()
 			data = self._read_data(shape)
 			yield data
-

@@ -23,7 +23,7 @@ def dataset_from_text():
 	assert len(t1) == signal.shape[0]
 	assert len(t2) == signal.shape[1]
 	assert len(w3) == signal.shape[2]
-	
+
 	return dataset
 
 def dataset_to_text():
