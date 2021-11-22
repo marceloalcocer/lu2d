@@ -23,7 +23,9 @@ class Dataset:
 	
 	:type: sequence of ``numpy.ndarray``s
 
-	Each ``ndarray`` holds the dataset axis (independent variable) for the corresponding signal array dimension. As such, ``len(axis) == signal.ndim`` and ``len(axis[i]) == signal.shape[i]``.
+	Each ``ndarray`` holds the dataset axis (independent variable) for the
+	corresponding signal array dimension. As such, ``len(axis) == signal.ndim``
+	and ``len(axis[i]) == signal.shape[i]``.
 	
 	"""
 
@@ -32,10 +34,14 @@ class Dataset:
 
 	:type: sequence of ``numpy.ndarray``s
 
-	Each ``ndarray`` holds the local oscillator intensity  (dependent variable) for the measurement at the corresponding population time — i.e. ``lo[i]`` is associsated with ``dataset.axes[1][i]``. As such, ``len(los) == len(dataset.axes[1]) == signal.shape[1]``. 
+	Each ``ndarray`` holds the local oscillator intensity  (dependent variable)
+	for the measurement at the corresponding population time — i.e. ``lo[i]`` is
+	associsated with ``dataset.axes[1][i]``. As such, ``len(los) ==
+	len(dataset.axes[1]) == signal.shape[1]``. 
 	
-	The independent variable is the detection wavelenth, ``dataset.axis[2]``. As such, ``len(los[i]) == len(dataset.axis[2])``
-
+	The independent variable is the detection wavelenth, ``dataset.axis[2]``. As
+	such, ``len(los[i]) == len(dataset.axis[2])``
+	
 	"""
 
 	metadata = None
@@ -45,7 +51,8 @@ class Dataset:
 
 	**Valid for ``Datasets`` instantiated from binary files only**
 
-	A nested mapping containing the sections, options and values of the (INI formatted) experimental metadata file.
+	A nested mapping containing the sections, options and values of the (INI
+	formatted) experimental metadata file.
 
 	"""
 
@@ -70,9 +77,12 @@ class Dataset:
 		:param t2: Population time array
 		:type t2: sequence of ints
 
-		Instantiate dataset from multiple plain-text encoded files, as output by 2D analysis software.
-
-		``fmtstrs`` is dict with 'real' and 'imag' keys containing format strings for the real and imaginary filepaths. Each format string should contain a 't2' key designating the population time.
+		Instantiate dataset from multiple plain-text encoded files, as output by
+		2D analysis software.
+		
+		``fmtstrs`` is dict with 'real' and 'imag' keys containing format
+		strings for the real and imaginary filepaths. Each format string should
+		contain a 't2' key designating the population time.
 
 		e.g.::
 
@@ -124,10 +134,13 @@ class Dataset:
 		:param fmtstrs: Format strings for the real and imaginary filepaths 
 		:type fmtstrs:  dict
 
-		Write data to multiple plain-text encoded files, as output by 2D analysis software.
-
-		``fmtstrs`` is dict with 'real' and 'imag' keys containing format strings for the real and imaginary filepaths. Each format string should contain a 't2' key designating the population time.
-
+		Write data to multiple plain-text encoded files, as output by 2D
+		analysis software.
+		
+		``fmtstrs`` is dict with 'real' and 'imag' keys containing format
+		strings for the real and imaginary filepaths. Each format string should
+		contain a 't2' key designating the population time.
+		
 		e.g.::
 
 			>>> fmtstrs = {
@@ -172,9 +185,13 @@ class Dataset:
 		:param path: Path to metadata file
 		:type path: str
 		
-		Instantiate dataset from binary encoded files, as output by 2D acquisition software.
-
-		``path`` is the path to the experimental metadata file — the primary plain-text file output by the 2D acquisition software. This contains all experimental metadata, including the locations of the binary data files (``*.bin``).
+		Instantiate dataset from binary encoded files, as output by 2D
+		acquisition software.
+		
+		``path`` is the path to the experimental metadata file — the primary
+		plain-text file output by the 2D acquisition software. This contains all
+		experimental metadata, including the locations of the binary data files
+		(``*.bin``).
 		
 		e.g.::
 
@@ -219,8 +236,11 @@ class Dataset:
 		"""Local oscillator arrays
 
 		:rtype: sequence of ``str`s
-
-		Each element is the (plain-text) timestamp of the measurement at the corresponding population time — i.e. ``timestamp[i]`` is associsated with ``dataset.axes[1][i]``. As such, ``len(timestamps) == len(dataset.axes[1]) == signal.shape[1]``. 
+		
+		Each element is the (plain-text) timestamp of the measurement at the
+		corresponding population time — i.e. ``timestamp[i]`` is associsated
+		with ``dataset.axes[1][i]``. As such, ``len(timestamps) ==
+		len(dataset.axes[1]) == signal.shape[1]``. 
 		
 		"""
 		return [
@@ -260,7 +280,9 @@ class Dataset:
 		
 		:rtype: sequence of ``float``s
 
-		A sequence whose elements correspond to the incident pulse polarizations — i.e. ``polarizations[0]`` is the polarization of the  first pulse. As such, ``len(polarizations) == 4``
+		A sequence whose elements correspond to the incident pulse polarizations
+		— i.e. ``polarizations[0]`` is the polarization of the  first pulse. As
+		such, ``len(polarizations) == 4``
 		
 		"""
 		return (
@@ -289,7 +311,7 @@ class Dataset:
 			else None
 		)
 
-	
+
 class _BinaryMetadata(configparser.ConfigParser):
 
 	dirname = None
