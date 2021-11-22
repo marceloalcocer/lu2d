@@ -218,8 +218,8 @@ class Dataset:
 			signals[0].shape[0]
 		)
 		t2 = np.array(t2)
-		w3 = np.loadtxt(metadata.header.getpath("FileCalibration"))
-		axes = [ t1, t2, w3 ]
+		λ3 = np.loadtxt(metadata.header.getpath("FileCalibration"))
+		axes = [ t1, t2, λ3 ]
 		signal = np.concatenate(signals, axis=1)
 		return cls(
 			signal=signal,
