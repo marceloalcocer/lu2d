@@ -49,5 +49,21 @@ def dataset_from_binary():
 
 	return dataset
 
+def dataset_to_binary():
+	"""Example of writing a dataset to binary files"""
+
+	# Instantiate dataset
+	dataset = dataset_from_binary()
+	dataset.signal = dataset.signal[2:-2,:-1,:]
+	dataset.axes[0] = dataset.axes[0][2:-2]
+	dataset.axes[1] = dataset.axes[1][:-1]
+	dataset.los.pop()
+	dataset.timestamps.pop()
+
+	# Write dataset
+	path = "data/binary/write.ini"
+	dataset.to_binary(path)
+
 if __name__ == "__main__":
 	dataset_from_binary()
+	dataset_to_binary()
