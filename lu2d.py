@@ -334,6 +334,7 @@ class Dataset:
 	# -- Private ------------------------------------------------------------- #
 
 	def _read_data(self, path):
+		"""Read lo and signal arrays from binary data files"""
 		dirname = os.path.dirname(path)
 		t2 = []
 		signals = []
@@ -354,6 +355,11 @@ class Dataset:
 		self.signal = np.concatenate(signals, axis=1)
 
 	def _read_t1(self):
+		"""Read t1 from experimental metadata file
+		
+		Must be called __after__ signal has been assigned
+		
+		"""
 		self.axes[0] = np.linspace(
 			self.metadata.header.getfloat("CoherenceTimeBegin"),
 			self.metadata.header.getfloat("CoherenceTimeEnd"),
@@ -361,6 +367,7 @@ class Dataset:
 		)
 
 	def _read_λ3(self, path):
+		"""Read λ3 from path in experimental metadata file"""
 		self.axes[2] = np.loadtxt(
 			os.path.join(
 				os.path.dirname(path),
@@ -369,6 +376,7 @@ class Dataset:
 		)
 
 	def _write_data(self, path, metadata=None):
+		"""Write lo and signal arrays to binary data files"""
 		if metadata is None:
 			metadata = self.metadata
 		dirname = os.path.dirname(path)
@@ -388,6 +396,7 @@ class Dataset:
 				_BinaryData(lo=lo, signal=signal).write(file)
 
 	def _write_λ3(self, path, metadata=None):
+		"""Write λ3 to path in experimental metadata file"""
 		if metadata is None:
 			metadata = self.metadata
 		dirname = os.path.dirname(path)
@@ -400,6 +409,7 @@ class Dataset:
 		)
 
 	def _assert_axes(self):
+		"""Assert axes consistent with signal shape"""
 		if (
 			len(self.axes) != self.signal.ndim or
 			any(
@@ -410,6 +420,7 @@ class Dataset:
 			raise ValueError("Axes assertion failed")
 
 	def _assert_los(self):
+		"""Assert los consistent with signal shape"""
 		if self.los and (
 			len(self.los) != self.signal.shape[1] or
 			any(
@@ -420,16 +431,25 @@ class Dataset:
 			raise ValueError("LO assertion failed")
 
 	def _assert_timestamps(self):
+		"""Assert timestamps consistent with signal shape"""
 		if self.timestamps and len(self.timestamps) != self.signal.shape[1]:
 			raise ValueError("Timestamp assertion failed")
 
 	def _assert(self):
+		"""Assert consistency with signal shape"""
 		self._assert_axes()
 		self._assert_los()
 		self._assert_timestamps()
 
 
 class _BinaryMetadata(configparser.ConfigParser):
+	"""Experimental metadata
+	
+	The primary plain-text file output by the 2D acquisition software. This
+	contains all experimental metadata, including the locations of the binary
+	data files (``*.bin``).
+	
+	"""
 
 	# -- Public -------------------------------------------------------------- #
 
@@ -437,6 +457,7 @@ class _BinaryMetadata(configparser.ConfigParser):
 
 	@classmethod
 	def from_dataset(cls, dataset):
+		"""Instantiate metadata from dataset"""
 		self = cls()
 		self["Header"] = dict(dataset.metadata["Header"])
 		self.setfloat("Header", "CoherenceTimeBegin", dataset.axes[0][0])
@@ -445,41 +466,66 @@ class _BinaryMetadata(configparser.ConfigParser):
 		return self
 
 	def write(self, file, *args, **kwargs):
+		"""Write metadata to file
+
+		Updates filename dependent option values before write
+		
+		"""
 		self._update_λ3_path(file)
 		self._update_data_paths(file)
 		super().write(file, *args, **kwargs)
 
 	def optionxform(self, optionstr):
+		"""Option transformation
+		
+		Required to maintain option casing
+		
+		"""
 		return optionstr
 
 	# Converters
 
 	def getstr(self, *args, **kwargs):
+		"""String convertsion
+
+		Strips enclosing double quotes (0x22)
+
+		"""
 		return self.get(*args, **kwargs).strip("\"")
 
 	def setstr(self, section, option, value):
+		"""String conversion
+		
+		Encloses in double quotes (0x22)
+		
+		"""
 		return self.set(section, option, f"\"{value}\"")
 
 	def setfloat(self, section, option, value):
+		"""Float conversion"""
 		return self.set(section, option, f"{value:.3f}")
 
 	# General
 
 	@property
 	def header(self):
+		"""Header section property"""
 		return self["Header"]
 
 	def experiment(self, n):
+		"""Single experiment section"""
 		return self[f"Experiment {n:d}"]
 
 	@property
 	def experiments(self):
+		"""Iterator over experiment sections"""
 		for name, section in self.items():
 			if "Experiment" in name:
 				yield section
 
 	@experiments.setter
 	def experiments(self, value):
+		"""Set experiment sections"""
 		for i_t2, (t2, timestamp) in enumerate(zip(*value)):
 			key = f"Experiment {i_t2:d}"
 			self[key] = {}
@@ -488,11 +534,21 @@ class _BinaryMetadata(configparser.ConfigParser):
 			self.setstr(key, "File2DSignal", f"Signal and LO {i_t2:d}.bin")
 
 	def datadir(self, path):
+		"""Data directory
+
+		Relative to metadata file path, ``path``
+		
+		"""
 		return f"{os.path.splitext(os.path.basename(path))[0]} Data"
 
 	# -- Private ------------------------------------------------------------- #
 
 	def _update_λ3_path(self, file):
+		"""Update λ3 option values
+		
+		Path dependent
+		
+		"""
 		self.setstr(
 			"Header",
 			"FileCalibration",
@@ -500,6 +556,11 @@ class _BinaryMetadata(configparser.ConfigParser):
 		)
 
 	def _update_data_paths(self, file):
+		"""Update experiment binary data file paths
+		
+		Path dependent
+		
+		"""
 		datadir = self.datadir(file.name)
 		for experiment in self.experiments:
 			basename = os.path.basename(
@@ -513,6 +574,12 @@ class _BinaryMetadata(configparser.ConfigParser):
 
 
 class _BinaryData:
+	"""Binary data file
+
+	Binary encoded data file (``*.bin``) containing LO and signal arrays. Output
+	by 2D acquisition software.
+
+	"""
 
 	lo = None
 	signal = None
@@ -535,6 +602,7 @@ class _BinaryData:
 	# I/O
 
 	def read(self, file):
+		"""Read LO and signal arrays"""
 		self._assert_magic_number(file)
 		self.lo, self.signal = self._iter_read_array(file)
 		self.lo = self.lo.squeeze()
@@ -542,6 +610,7 @@ class _BinaryData:
 		return self
 
 	def write(self, file):
+		"""Write LO and signal arrays"""
 		self._assert_shapes()
 		self._write_magic_number(file)
 		self._write_array(file, self.lo[np.newaxis,:])
@@ -550,6 +619,7 @@ class _BinaryData:
 	# -- Private ------------------------------------------------------------- #
 
 	def _assert_magic_number(self, file):
+		"""Assert magic number"""
 		magic_number = self._read_magic_number(file)
 		if magic_number != self._magic_number:
 			raise ValueError(
@@ -558,6 +628,7 @@ class _BinaryData:
 			)
 
 	def _assert_shapes(self):
+		"""Assert array shapes"""
 		if (
 			self.signal.ndim != 2 or
 			len(self.lo) != self.signal.shape[1]
@@ -565,9 +636,11 @@ class _BinaryData:
 			raise ValueError("Shape assertion failed")
 
 	def _read_magic_number(self, file):
+		"""Read magic number"""
 		return file.read(len(self._magic_number))
 
 	def _read_shape(self, file):
+		"""Read array shape"""
 		return tuple(
 			np.fromfile(
 				file,
@@ -577,6 +650,7 @@ class _BinaryData:
 		)
 
 	def _read_data(self, file, shape):
+		"""Read array data"""
 		return np.fromfile(
 			file,
 			dtype=self._dtypes["data"],
@@ -584,31 +658,37 @@ class _BinaryData:
 		).reshape(shape)
 
 	def _read_array(self, file):
+		"""Read array"""
 		shape = self._read_shape(file)
 		return self._read_data(file, shape)
 
 	def _iter_read_array(self, file):
-		"""Iterator over data in file"""
+		"""Iteratively read all arrays"""
 		while file.peek(1):
 			yield self._read_array(file)
 
 	def _write_magic_number(self, file):
+		"""Write magic number"""
 		return file.write(self._magic_number)
 
-	def _ndshape(self, data):
-		return np.array(
-			data.shape,
-			dtype=self._dtypes["shape"]
-		)
-
 	def _write_shape(self, file, data):
+		"""Write array shape"""
 		return file.write(self._ndshape(data).tobytes())
 
 	def _write_data(self, file, data):
+		"""Write array data"""
 		if data.dtype != self._dtypes["data"]:
 			data = data.astype(self._dtypes["data"])
 		return file.write(data.tobytes())
 
 	def _write_array(self, file, data):
+		"""Write array"""
 		self._write_shape(file, data)
 		self._write_data(file, data)
+
+	def _ndshape(self, data):
+		"""Convert array shape to ndarray"""
+		return np.array(
+			data.shape,
+			dtype=self._dtypes["shape"]
+		)
