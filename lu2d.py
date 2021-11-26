@@ -69,6 +69,10 @@ class Dataset:
 
 	"""
 
+	# -- Public -------------------------------------------------------------- #
+
+	# Special
+
 	def __init__(
 		self,
 		signal=None,
@@ -88,6 +92,8 @@ class Dataset:
 			timestamps = []
 		self.timestamps = timestamps
 		self.metadata = metadata
+
+	# I/O
 
 	@classmethod
 	def from_text(cls, fmtstrs, t2):
@@ -228,41 +234,6 @@ class Dataset:
 		self._read_λ3(path)
 		return self
 
-	def _read_data(self, path):
-		dirname = os.path.dirname(path)
-		t2 = []
-		signals = []
-		for experiment in self.metadata.experiments:
-			t2.append(experiment.getfloat("PopulationTime"))
-			self.timestamps.append(experiment.getstr("DateAndTime"))
-			with open(
-				os.path.join(
-					dirname,
-					experiment.getstr("File2DSignal")
-				),
-				"rb"
-			) as file:
-				data = _BinaryData().read(file)
-				self.los.append(data.lo)
-				signals.append(data.signal[:,np.newaxis,:])
-		self.axes[1] = np.array(t2)
-		self.signal = np.concatenate(signals, axis=1)
-
-	def _read_t1(self):
-		self.axes[0] = np.linspace(
-			self.metadata.header.getfloat("CoherenceTimeBegin"),
-			self.metadata.header.getfloat("CoherenceTimeEnd"),
-			self.signal.shape[0]
-		)
-
-	def _read_λ3(self, path):
-		self.axes[2] = np.loadtxt(
-			os.path.join(
-				os.path.dirname(path),
-				self.metadata.header.getstr("FileCalibration")
-			)
-		)
-
 	def to_binary(self, path):
 		"""Write dataset to binary files
 		
@@ -291,65 +262,7 @@ class Dataset:
 		self._write_data(path, metadata)
 		self._write_λ3(path, metadata)
 
-	def _write_data(self, path, metadata=None):
-		if metadata is None:
-			metadata = self.metadata
-		dirname = os.path.dirname(path)
-		os.mkdir(os.path.join(dirname, metadata.datadir(path)))
-		for experiment, lo, signal in zip(
-			metadata.experiments,
-			self.los,
-			self.signal.transpose((1,0,2))
-		):
-			with open(
-				os.path.join(
-					dirname,
-					experiment.getstr("File2DSignal"),
-				),
-				"wb"
-			) as file:
-				_BinaryData(lo=lo, signal=signal).write(file)
-
-	def _write_λ3(self, path, metadata=None):
-		if metadata is None:
-			metadata = self.metadata
-		dirname = os.path.dirname(path)
-		np.savetxt(
-			os.path.join(dirname, metadata.header.getstr("FileCalibration")),
-			self.axes[2][:,np.newaxis],
-			fmt="%.3f",
-			newline="\r\n",
-			encoding="utf-8"
-		)
-
-	def _assert_axes(self):
-		if (
-			len(self.axes) != self.signal.ndim or
-			any(
-				len(axis) != self.signal.shape[i_axis]
-				for i_axis, axis in enumerate(self.axes)
-			)
-		):
-			raise ValueError("Axes assertion failed")
-
-	def _assert_los(self):
-		if self.los and (
-			len(self.los) != self.signal.shape[1] or
-			any(
-				len(lo) != self.signal.shape[2]
-				for lo in self.los
-			)
-		):
-			raise ValueError("LO assertion failed")
-
-	def _assert_timestamps(self):
-		if self.timestamps and len(self.timestamps) != self.signal.shape[1]:
-			raise ValueError("Timestamp assertion failed")
-
-	def _assert(self):
-		self._assert_axes()
-		self._assert_los()
-		self._assert_timestamps()
+	# Properties
 
 	@property
 	def spectral_sensitivity(self):
@@ -418,10 +331,109 @@ class Dataset:
 			else None
 		)
 
+	# -- Private ------------------------------------------------------------- #
+
+	def _read_data(self, path):
+		dirname = os.path.dirname(path)
+		t2 = []
+		signals = []
+		for experiment in self.metadata.experiments:
+			t2.append(experiment.getfloat("PopulationTime"))
+			self.timestamps.append(experiment.getstr("DateAndTime"))
+			with open(
+				os.path.join(
+					dirname,
+					experiment.getstr("File2DSignal")
+				),
+				"rb"
+			) as file:
+				data = _BinaryData().read(file)
+				self.los.append(data.lo)
+				signals.append(data.signal[:,np.newaxis,:])
+		self.axes[1] = np.array(t2)
+		self.signal = np.concatenate(signals, axis=1)
+
+	def _read_t1(self):
+		self.axes[0] = np.linspace(
+			self.metadata.header.getfloat("CoherenceTimeBegin"),
+			self.metadata.header.getfloat("CoherenceTimeEnd"),
+			self.signal.shape[0]
+		)
+
+	def _read_λ3(self, path):
+		self.axes[2] = np.loadtxt(
+			os.path.join(
+				os.path.dirname(path),
+				self.metadata.header.getstr("FileCalibration")
+			)
+		)
+
+	def _write_data(self, path, metadata=None):
+		if metadata is None:
+			metadata = self.metadata
+		dirname = os.path.dirname(path)
+		os.mkdir(os.path.join(dirname, metadata.datadir(path)))
+		for experiment, lo, signal in zip(
+			metadata.experiments,
+			self.los,
+			self.signal.transpose((1,0,2))
+		):
+			with open(
+				os.path.join(
+					dirname,
+					experiment.getstr("File2DSignal"),
+				),
+				"wb"
+			) as file:
+				_BinaryData(lo=lo, signal=signal).write(file)
+
+	def _write_λ3(self, path, metadata=None):
+		if metadata is None:
+			metadata = self.metadata
+		dirname = os.path.dirname(path)
+		np.savetxt(
+			os.path.join(dirname, metadata.header.getstr("FileCalibration")),
+			self.axes[2][:,np.newaxis],
+			fmt="%.3f",
+			newline="\r\n",
+			encoding="utf-8"
+		)
+
+	def _assert_axes(self):
+		if (
+			len(self.axes) != self.signal.ndim or
+			any(
+				len(axis) != self.signal.shape[i_axis]
+				for i_axis, axis in enumerate(self.axes)
+			)
+		):
+			raise ValueError("Axes assertion failed")
+
+	def _assert_los(self):
+		if self.los and (
+			len(self.los) != self.signal.shape[1] or
+			any(
+				len(lo) != self.signal.shape[2]
+				for lo in self.los
+			)
+		):
+			raise ValueError("LO assertion failed")
+
+	def _assert_timestamps(self):
+		if self.timestamps and len(self.timestamps) != self.signal.shape[1]:
+			raise ValueError("Timestamp assertion failed")
+
+	def _assert(self):
+		self._assert_axes()
+		self._assert_los()
+		self._assert_timestamps()
+
 
 class _BinaryMetadata(configparser.ConfigParser):
 
-	# Instantiation
+	# -- Public -------------------------------------------------------------- #
+
+	# I/O
 
 	@classmethod
 	def from_dataset(cls, dataset):
@@ -432,15 +444,13 @@ class _BinaryMetadata(configparser.ConfigParser):
 		self.experiments = (dataset.axes[1], dataset.timestamps)
 		return self
 
-	# Overrides
-
-	def optionxform(self, optionstr):
-		return optionstr
-
 	def write(self, file, *args, **kwargs):
 		self._update_λ3_path(file)
 		self._update_data_paths(file)
 		super().write(file, *args, **kwargs)
+
+	def optionxform(self, optionstr):
+		return optionstr
 
 	# Converters
 
@@ -453,7 +463,7 @@ class _BinaryMetadata(configparser.ConfigParser):
 	def setfloat(self, section, option, value):
 		return self.set(section, option, f"{value:.3f}")
 
-	# Public
+	# General
 
 	@property
 	def header(self):
@@ -480,7 +490,7 @@ class _BinaryMetadata(configparser.ConfigParser):
 	def datadir(self, path):
 		return f"{os.path.splitext(os.path.basename(path))[0]} Data"
 
-	# Private
+	# -- Private ------------------------------------------------------------- #
 
 	def _update_λ3_path(self, file):
 		self.setstr(
@@ -514,13 +524,15 @@ class _BinaryData:
 		"data": np.dtype(">f4")
 	}
 
-	# Instantation
+	# -- Public -------------------------------------------------------------- #
+
+	# Special
 
 	def __init__(self, lo=None, signal=None):
 		self.lo = lo
 		self.signal = signal
 
-	# Public
+	# I/O
 
 	def read(self, file):
 		self._assert_magic_number(file)
@@ -535,7 +547,7 @@ class _BinaryData:
 		self._write_array(file, self.lo[np.newaxis,:])
 		self._write_array(file, self.signal.squeeze())
 
-	# Private
+	# -- Private ------------------------------------------------------------- #
 
 	def _assert_magic_number(self, file):
 		magic_number = self._read_magic_number(file)
