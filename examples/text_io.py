@@ -11,7 +11,7 @@ def dataset_from_text():
 		"real": "data/text/demo_Real_{t2}fs.txt",
 		"imag": "data/text/demo_Imaginary_{t2}fs.txt"
 	}
-	t2 = [0, 100, 1000, 900000]
+	t2 = [0, 100, 1000]
 	dataset = lu2d.Dataset.from_text(fmtstrs, t2)
 
 	# Signal
