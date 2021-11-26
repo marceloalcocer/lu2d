@@ -465,15 +465,16 @@ class _BinaryMetadata(configparser.ConfigParser):
 		self.experiments = (dataset.axes[1], dataset.timestamps)
 		return self
 
-	def write(self, file, *args, **kwargs):
+	def write(self, *args, **kwargs):
 		"""Write metadata to file
 
 		Updates filename dependent option values before write
 		
 		"""
+		file = args[0]
 		self._update_λ3_path(file)
 		self._update_data_paths(file)
-		super().write(file, *args, **kwargs)
+		super().write(*args, **kwargs)
 
 	def optionxform(self, optionstr):
 		"""Option transformation
