@@ -78,8 +78,14 @@ class Dataset:
 		metadata=None
 	):
 		self.signal = signal
+		if axes is None:
+			axes = [[],[],[]]
 		self.axes = axes
+		if los is None:
+			los = []
 		self.los = los
+		if timestamps is None:
+			timestamps = []
 		self.timestamps = timestamps
 		self.metadata = metadata
 
@@ -214,47 +220,47 @@ class Dataset:
 			>>> dataset = Dataset.from_binary(path)
 
 		"""
+		self = cls()
+		self.metadata = _BinaryMetadata()
+		self.metadata.read(path)
+		self._read_data(path)
+		self._read_t1()
+		self._read_λ3(path)
+		return self
 
-		# Read metadata file
-		metadata = _BinaryMetadata()
-		metadata.read(path)
+	def _read_data(self, path):
 		dirname = os.path.dirname(path)
 		t2 = []
-		timestamps = []
-		los = []
 		signals = []
-		for experiment in metadata.experiments:
+		for experiment in self.metadata.experiments:
 			t2.append(experiment.getfloat("PopulationTime"))
-			timestamps.append(experiment.getstr("DateAndTime"))
+			self.timestamps.append(experiment.getstr("DateAndTime"))
 			with open(
 				os.path.join(
 					dirname,
 					experiment.getstr("File2DSignal")
-				), "rb"
+				),
+				"rb"
 			) as file:
 				data = _BinaryData().read(file)
-				los.append(data.lo)
+				self.los.append(data.lo)
 				signals.append(data.signal[:,np.newaxis,:])
-		t1 = np.linspace(
-			metadata.header.getfloat("CoherenceTimeBegin"),
-			metadata.header.getfloat("CoherenceTimeEnd"),
-			signals[0].shape[0]
+		self.axes[1] = np.array(t2)
+		self.signal = np.concatenate(signals, axis=1)
+
+	def _read_t1(self):
+		self.axes[0] = np.linspace(
+			self.metadata.header.getfloat("CoherenceTimeBegin"),
+			self.metadata.header.getfloat("CoherenceTimeEnd"),
+			self.signal.shape[0]
 		)
-		t2 = np.array(t2)
-		λ3 = np.loadtxt(
+
+	def _read_λ3(self, path):
+		self.axes[2] = np.loadtxt(
 			os.path.join(
-				dirname,
-				metadata.header.getstr("FileCalibration")
+				os.path.dirname(path),
+				self.metadata.header.getstr("FileCalibration")
 			)
-		)
-		axes = [ t1, t2, λ3 ]
-		signal = np.concatenate(signals, axis=1)
-		return cls(
-			signal=signal,
-			axes=axes,
-			los=los,
-			timestamps=timestamps,
-			metadata=metadata
 		)
 
 	def to_binary(self, path):
