@@ -266,7 +266,11 @@ class Dataset:
 
 	@property
 	def spectral_sensitivity(self):
-		return NotImplementedError
+		raise NotImplementedError
+
+	@spectral_sensitivity.setter
+	def spectral_sensitivity(self, value):
+		raise NotImplementedError
 
 	@property
 	def excitation_energy(self):
@@ -281,6 +285,10 @@ class Dataset:
 			else None
 		)
 
+	@excitation_energy.setter
+	def excitation_energy(self, value):
+		self.metadata.setfloat("Header", "ExcitationEnergy", float(value))
+
 	@property
 	def repetition_rate(self):
 		"""Excitation repetition rate
@@ -293,6 +301,10 @@ class Dataset:
 			if self.metadata
 			else None
 		)
+
+	@repetition_rate.setter
+	def repetition_rate(self, value):
+		self.metadata.setfloat("Header", "RepetitionRate", float(value))
 
 	@property
 	def polarizations(self):
@@ -316,6 +328,11 @@ class Dataset:
 			else None
 		)
 
+	@polarizations.setter
+	def polarizations(self, value):
+		for i_pol, pol in enumerate(value):
+			self.metadata.setfloat("Header", f"Polarizer{i_pol}", float(pol))
+
 	@property
 	def fs_thickness(self):
 		"""Fused silica thickness
@@ -329,6 +346,14 @@ class Dataset:
 			self.metadata.header.getfloat("FSThicknessBetween3and4")
 			if self.metadata
 			else None
+		)
+
+	@fs_thickness.setter
+	def fs_thickness(self, value):
+		self.metadata.setfloat(
+			"Header",
+			"FSThicknessBetween3and4",
+			float(value)
 		)
 
 	# -- Private ------------------------------------------------------------- #
